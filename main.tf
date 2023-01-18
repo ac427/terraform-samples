@@ -1,77 +1,27 @@
-provider "kubernetes" {
-  config_context_cluster   = "minikube"
-  config_path    = "~/.kube/config"
-  config_context = "minikube"
-}
-
-resource "kubernetes_namespace" "lab1" {
+resource "kubernetes_namespace" "engineering" {
   metadata {
-
     labels = {
-      app = "nginx"
+      team = "engineering"
     }
-
-    name = "lab1"
+    name = "engineering"
   }
 }
 
-
-resource "kubernetes_pod" "nginx" {
+resource "kubernetes_config_map" "sample_cm" {
   metadata {
-    name = "nginx"
-    namespace = "lab1"
-
+    labels = {
+      team = "sample_cm"
+    }
+    name      = "sample-cm"
+    namespace = "engineering"
+  }
+  data = {
+    api_host             = "myhost:443"
+    db_host              = "dbhost:5432"
+    "my_config_file.yml" = file("${path.module}/files/my_config_file.yml")
   }
 
-  spec {
-    container {
-      image = "nginx"
-      name  = "nginx"
-
-      env {
-        name  = "secret"
-        value = "top-secret"
-      }
-
-      port {
-        container_port = 80
-      }
-
-      liveness_probe {
-        http_get {
-          path = "/"
-          port = 80
-
-          http_header {
-            name  = "X-Custom-Header"
-            value = "Awesome"
-          }
-        }
-
-        initial_delay_seconds = 3
-        period_seconds        = 3
-      }
-    }
-
-    dns_config {
-      nameservers = ["1.1.1.1", "8.8.8.8", "9.9.9.9"]
-      searches    = ["example.com"]
-
-      option {
-        name  = "ndots"
-        value = 1
-      }
-
-      option {
-        name = "use-vc"
-      }
-    }
-
-    dns_policy = "None"
-  }
-}
-
-output "spec" {
-  description = "returns a list of object"
-  value = kubernetes_pod.nginx.spec[0]
+  #  binary_data = {
+  #    "hello-world.bin" = filebase64("${path.module}/files/hello-world.bin")
+  #  }
 }
